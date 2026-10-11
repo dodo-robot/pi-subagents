@@ -27,6 +27,8 @@ export interface FakeChildResponse {
 	omitImplicitFinalEvents?: boolean;
 	/** Simulates a host extension (e.g. a model router) switching the child off its launch model: every assistant message reports this model instead. */
 	reportedModel?: string;
+	/** Events emitted by child extensions before the scripted provider response. */
+	preResponseEvents?: unknown[];
 	/** Raw JSON lines; parsed into events for the in-process child without acceptance-report injection. */
 	stdoutRaw?: string;
 	steps?: Array<{ delay?: number; waitForPath?: string; jsonl?: unknown[]; stdoutRaw?: string }>;
@@ -366,6 +368,7 @@ export function createFakeChildSessions(queueDir: () => string): FakeChildSessio
 					}
 				}
 				emit({ type: "agent_start" });
+				if (Array.isArray(response.preResponseEvents)) await emitEntries(response.preResponseEvents, task);
 				if (response.queuedInputReleasePath) {
 					boundaryOpen = true;
 					const keepAlive = setInterval(() => {}, 1_000);

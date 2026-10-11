@@ -86,6 +86,33 @@ describe("async step reports the observed child model", () => {
 		}
 	});
 
+	it("publishes a router-selected model when its first request fails before an assistant response", async () => {
+		const root = fs.mkdtempSync(path.join(os.tmpdir(), "pi-observed-model-error-"));
+		const queue = path.join(root, "queue");
+		fs.mkdirSync(queue, { recursive: true });
+		fs.writeFileSync(path.join(queue, "default-response.json"), JSON.stringify({
+			preResponseEvents: [{
+				type: "model_select",
+					model: { provider: "anthropic", id: "claude-sonnet-5-5" },
+					previousModel: { provider: "llama-swap", id: "qwen3.5:9b" },
+					source: "set",
+			}],
+			jsonl: [{ type: "agent_end", messages: [] }],
+			omitImplicitFinalEvents: true,
+		}));
+		const fake = createFakeChildSessions(() => queue);
+		const config = baseConfig(root, "observed-error", [
+			{ agent: "qwen_worker", task: "do the work", model: "llama-swap/qwen3.5:9b" },
+		]);
+		try {
+			await runSubagent(config, fake.factory);
+			const models = stepModels(readStatus(config));
+			assert.deepEqual(models, ["anthropic/claude-sonnet-5-5"], "failed routed requests must still report the selected model");
+		} finally {
+			fs.rmSync(root, { recursive: true, force: true });
+		}
+	});
+
 	it("keeps the launch model when the child reports the same model", async () => {
 		const root = fs.mkdtempSync(path.join(os.tmpdir(), "pi-observed-model-same-"));
 		const queue = path.join(root, "queue");

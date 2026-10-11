@@ -3124,6 +3124,8 @@ export async function runSubagent(
 			} else if (toolSnapshot?.mutates) {
 				resetMutatingFailureState(mutatingFailureStates[flatIndex]!);
 			}
+		} else if (event.type === "model_select" && event.model?.provider && event.model.id) {
+			step.model = `${event.model.provider}/${event.model.id}`;
 		} else if (event.type === "message_end" && event.message?.role === "assistant") {
 			appendRecentStepOutput(step, stripAcceptanceReport(extractTextFromContent(event.message.content)).split("\n").slice(-10));
 			step.turnCount = (step.turnCount ?? 0) + 1;

@@ -57,6 +57,7 @@ export type ChildMessage = Message & {
 
 export interface ChildEvent {
 	type?: string;
+	model?: { provider?: string; id?: string };
 	message?: ChildMessage;
 	toolName?: string;
 	toolCallId?: string;
